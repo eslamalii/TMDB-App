@@ -4,6 +4,8 @@ import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
 import { DatabaseModule } from './database/database.module';
 import { SeedModule } from './seed/seed.module';
+import { GenreModule } from './genre/genre.module';
+import { MovieModule } from './movie/movie.module';
 
 @Module({
   imports: [
@@ -13,6 +15,8 @@ import { SeedModule } from './seed/seed.module';
     }),
     DatabaseModule,
     SeedModule,
+    GenreModule,
+    MovieModule,
   ],
   controllers: [AppController],
   providers: [AppService],
