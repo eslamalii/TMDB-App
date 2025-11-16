@@ -6,6 +6,8 @@ import { DatabaseModule } from './database/database.module';
 import { SeedModule } from './seed/seed.module';
 import { GenreModule } from './genre/genre.module';
 import { MovieModule } from './movie/movie.module';
+import { UserModule } from './user/user.module';
+import { AuthModule } from './auth/auth.module';
 
 @Module({
   imports: [
@@ -17,6 +19,8 @@ import { MovieModule } from './movie/movie.module';
     SeedModule,
     GenreModule,
     MovieModule,
+    UserModule,
+    AuthModule,
   ],
   controllers: [AppController],
   providers: [AppService],
