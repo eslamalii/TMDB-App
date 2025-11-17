@@ -10,6 +10,7 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { RatingModule } from './rating/rating.module';
 import { WatchlistModule } from './watchlist/watchlist.module';
+import { AppCacheModule } from './cache/cache.module';
 
 @Module({
   imports: [
@@ -25,6 +26,7 @@ import { WatchlistModule } from './watchlist/watchlist.module';
     AuthModule,
     RatingModule,
     WatchlistModule,
+    AppCacheModule,
   ],
   controllers: [AppController],
   providers: [AppService],
