@@ -4,35 +4,30 @@ import { getRepositoryToken } from '@nestjs/typeorm';
 import { User } from '../database/entities/user.entity';
 import * as bcrypt from 'bcrypt';
 
+jest.mock('bcrypt');
+
 // Mock the User entity
 const mockUser = {
   id: 1,
   email: 'test@example.com',
   username: 'testuser',
-  password_hash: 'hashedpassword',
-  created_at: new Date(),
-  ratings: [],
-  watchlist: [],
-};
+  password: 'hashedpassword',
+} as User;
 
 // Mock the TypeORM Repository
 const mockUserRepository = {
-  create: jest.fn().mockImplementation((dto) => dto),
-  save: jest.fn().mockResolvedValue(mockUser),
-  findOne: jest.fn().mockResolvedValue(mockUser),
+  create: jest.fn(),
+  save: jest.fn(),
+  findOne: jest.fn(),
 };
-
-// Mock bcrypt
-jest.mock('bcrypt', () => ({
-  hash: jest.fn().mockResolvedValue('hashedpassword'),
-  compare: jest.fn(),
-}));
 
 describe('UserService', () => {
   let service: UserService;
+  let repository: typeof mockUserRepository;
 
   beforeEach(async () => {
     jest.clearAllMocks();
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         UserService,
@@ -44,45 +39,69 @@ describe('UserService', () => {
     }).compile();
 
     service = module.get<UserService>(UserService);
+    repository = mockUserRepository;
   });
 
   it('should be defined', () => {
     expect(service).toBeDefined();
   });
 
-  // TEST 1: findByEmail (will fail)
   describe('findByEmail', () => {
     it('should find and return a user by email', async () => {
       const email = 'test@example.com';
-      const user = await service.findByEmail(email);
+      mockUserRepository.findOne.mockResolvedValue(mockUser);
+      const result = await service.findByEmail(email);
 
-      expect(user).toEqual(mockUser);
-      expect(mockUserRepository.findOne).toHaveBeenCalledWith({
+      expect(result).toEqual(mockUser);
+      expect(repository.findOne).toHaveBeenCalledWith({
+        where: { email },
+      });
+    });
+
+    it('should return null if user not found', async () => {
+      const email = 'notFound@example.com';
+      mockUserRepository.findOne.mockResolvedValue(null);
+
+      const result = await service.findByEmail(email);
+
+      expect(result).toBeNull();
+      expect(repository.findOne).toHaveBeenCalledWith({
         where: { email },
       });
     });
   });
 
-  // TEST 2: create (will fail)
   describe('create', () => {
     it('should hash the password and create a new user', async () => {
       const dto = {
         username: 'testuser',
         email: 'test@example.com',
-        password: 'plainpassword', // Plain text password
+        password: 'plainpassword',
       };
 
-      const user = await service.create(dto);
+      const hashedPassword = 'hashedpassword';
+      (bcrypt.hash as jest.Mock).mockResolvedValue(hashedPassword);
 
-      expect(user).toEqual(mockUser);
-      // Check that the password was hashed
+      const createdUser = {
+        id: 2,
+        username: dto.username,
+        email: dto.email,
+        password: hashedPassword,
+      };
+
+      mockUserRepository.create.mockReturnValue(createdUser);
+      mockUserRepository.save.mockResolvedValue(createdUser);
+
+      const result = await service.create(dto);
+
+      expect(result).toEqual(createdUser);
       expect(bcrypt.hash).toHaveBeenCalledWith('plainpassword', 10);
-      // Check that the hashed password was saved, not the plain one
-      expect(mockUserRepository.save).toHaveBeenCalledWith(
-        expect.objectContaining({
-          password: 'hashedpassword',
-        }),
-      );
+      expect(repository.create).toHaveBeenCalledWith({
+        username: dto.username,
+        email: dto.email,
+        password: hashedPassword,
+      });
+      expect(mockUserRepository.save).toHaveBeenCalledWith(createdUser);
     });
   });
 });

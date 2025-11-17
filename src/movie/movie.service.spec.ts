@@ -7,12 +7,14 @@ import { FilterMovieDto } from 'src/common/dtos/filter.dto';
 
 describe('findAll', () => {
   let service: MovieService;
-  let repository: jest.Mocked<Repository<Movie>>;
+  let repository: { createQueryBuilder: jest.Mock };
   let mockQueryBuilder: any;
 
   const mockMovie = { id: 1, title: 'Fight Club' } as any;
 
   beforeEach(async () => {
+    jest.clearAllMocks();
+
     mockQueryBuilder = {
       where: jest.fn().mockReturnThis(),
       andWhere: jest.fn().mockReturnThis(),
@@ -24,7 +26,7 @@ describe('findAll', () => {
 
     repository = {
       createQueryBuilder: jest.fn().mockReturnValue(mockQueryBuilder),
-    } as any;
+    };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
@@ -48,7 +50,7 @@ describe('findAll', () => {
   });
 
   it('should use DTO pagination params', async () => {
-    const movieDto = { offset: 10, limit: 5 };
+    const movieDto = { offset: 10, limit: 5 } as FilterMovieDto;
     await service.findAll(movieDto);
 
     expect(mockQueryBuilder.skip).toHaveBeenCalledWith(10);
