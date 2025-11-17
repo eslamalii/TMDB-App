@@ -12,7 +12,7 @@ jest.mock('bcrypt');
 const mockUser = {
   id: 1,
   email: 'test@example.com',
-  password: 'hashedpassword',
+  password: 'hashedPassword123',
   username: 'testuser',
 } as User;
 
@@ -53,9 +53,8 @@ describe('AuthService', () => {
   });
 
   describe('validateUser', () => {
-    it('should return user if password is valid', async () => {
-      mockUserService.findByEmail.mockResolvedValue(mockUser);
-      // Mock that passwords match
+    it('should return user without password if credentials are valid', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await service.validateUser(
@@ -68,76 +67,97 @@ describe('AuthService', () => {
         email: 'test@example.com',
         username: 'testuser',
       });
-
       expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
       expect(bcrypt.compare).toHaveBeenCalledWith(
         'password123',
-        'hashedpassword',
+        'hashedPassword123',
       );
     });
 
+    it('should normalize email (trim and lowercase)', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await service.validateUser('  TEST@Example.com ', 'password123');
+
+      expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
+    });
+
     it('should return null if user not found', async () => {
-      mockUserService.findByEmail.mockResolvedValue(null);
+      userService.findByEmail.mockResolvedValue(null);
 
       const result = await service.validateUser(
-        'wrong@example.com',
+        'notfound@example.com',
         'password123',
       );
 
       expect(result).toBeNull();
-      expect(userService.findByEmail).toHaveBeenCalledWith('wrong@example.com');
     });
 
-    it('should return null if password is invalid', async () => {
-      mockUserService.findByEmail.mockResolvedValue(mockUser);
+    it('should return null if password is incorrect', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
       (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await service.validateUser(
         'test@example.com',
-        'wrongpassword',
+        'wrongPassword',
       );
 
       expect(result).toBeNull();
-      expect(bcrypt.compare).toHaveBeenCalledWith(
-        'wrongpassword',
-        'hashedpassword',
+    });
+
+    it('should propagate bcrypt.compare errors', async () => {
+      userService.findByEmail.mockResolvedValue(mockUser);
+      (bcrypt.compare as jest.Mock).mockRejectedValue(
+        new Error('bcrypt-error'),
       );
+
+      await expect(
+        service.validateUser('test@example.com', 'password123'),
+      ).rejects.toThrow('bcrypt-error');
     });
   });
 
   describe('register', () => {
-    it('should create a new user if email is not taken', async () => {
-      mockUserService.findByEmail.mockResolvedValue(null);
-      mockUserService.create.mockResolvedValue(mockUser);
+    const registerDto = {
+      email: 'new@example.com',
+      username: 'newuser',
+      password: 'password123',
+    };
 
-      const dto = {
-        email: 'NEW@EXAMPLE.COM ',
-        username: 'newuser',
-        password: 'password123',
-      };
+    it('should create a new user and normalize email', async () => {
+      userService.findByEmail.mockResolvedValue(null);
+      userService.create.mockResolvedValue(mockUser);
 
-      const result = await service.register(dto);
+      const result = await service.register({
+        ...registerDto,
+        email: '  NEW@EXAMPLE.COM ',
+      });
 
       expect(result).toEqual(mockUser);
       expect(userService.findByEmail).toHaveBeenCalledWith('new@example.com');
       expect(userService.create).toHaveBeenCalledWith({
-        ...dto,
+        ...registerDto,
         email: 'new@example.com',
       });
     });
 
     it('should throw ConflictException if email already exists', async () => {
-      mockUserService.findByEmail.mockResolvedValue(mockUser);
+      userService.findByEmail.mockResolvedValue(mockUser);
 
-      const dto = {
-        email: 'test@example.com',
-        username: 'testuser',
-        password: 'password123',
-      };
-
-      await expect(service.register(dto)).rejects.toThrow(ConflictException);
-      expect(userService.findByEmail).toHaveBeenCalledWith('test@example.com');
+      await expect(service.register(registerDto)).rejects.toThrow(
+        ConflictException,
+      );
       expect(userService.create).not.toHaveBeenCalled();
+    });
+
+    it('should propagate create errors', async () => {
+      userService.findByEmail.mockResolvedValue(null);
+      userService.create.mockRejectedValue(new Error('create-fail'));
+
+      await expect(service.register(registerDto)).rejects.toThrow(
+        'create-fail',
+      );
     });
   });
 

@@ -21,10 +21,7 @@ describe('GenreService', () => {
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         GenreService,
-        {
-          provide: getRepositoryToken(Genre),
-          useValue: mockGenreRepository,
-        },
+        { provide: getRepositoryToken(Genre), useValue: mockGenreRepository },
       ],
     }).compile();
 
@@ -38,9 +35,14 @@ describe('GenreService', () => {
 
   describe('findAll', () => {
     it('should return an array of genres', async () => {
-      const genres = await service.findAll();
-      expect(genres).toEqual([mockGenre]);
+      const result = await service.findAll();
+      expect(result).toEqual([mockGenre]);
       expect(repository.find).toHaveBeenCalled();
+    });
+
+    it('should propagate repository errors', async () => {
+      repository.find.mockRejectedValueOnce(new Error('db-error'));
+      await expect(service.findAll()).rejects.toThrow('db-error');
     });
   });
 });

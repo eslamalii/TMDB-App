@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { Rating } from '../database/entities/rating.entity';
 import { DataSource, Repository } from 'typeorm';
 import { Movie } from '../database/entities/movie.entity';
@@ -8,13 +7,7 @@ import { Movie } from '../database/entities/movie.entity';
 export class RatingService {
   private readonly logger = new Logger(RatingService.name);
 
-  constructor(
-    @InjectRepository(Rating)
-    private readonly ratingRepository: Repository<Rating>,
-    @InjectRepository(Movie)
-    private readonly movieRepository: Repository<Movie>,
-    private readonly dataSource: DataSource,
-  ) {}
+  constructor(private readonly dataSource: DataSource) {}
 
   async addOrUpdateRating(
     userId: number,
@@ -28,45 +21,41 @@ export class RatingService {
         score,
       });
 
-      await this.recalculateMovieAverage(movieId, manager);
+      await this.recalculateMovieAverage(
+        movieId,
+        manager.getRepository(Rating),
+        manager.getRepository(Movie),
+      );
 
       return newRating;
     });
   }
 
-  /*
-  While this approach works, it slightly violates the Single Responsibility Principle (SRP) as the service is handling both rating updates and movie average recalculations. 
-  In larger applications, it is better to separate these concerns, potentially using Domain Events to decouple the logic.
-  */
   private async recalculateMovieAverage(
     movieId: number,
-    manager?: any,
+    ratingRepo: Repository<Rating>,
+    movieRepo: Repository<Movie>,
   ): Promise<void> {
-    const ratingRepo = manager
-      ? manager.getRepository(Rating)
-      : this.ratingRepository;
-    const movieRepo = manager
-      ? manager.getRepository(Movie)
-      : this.movieRepository;
+    try {
+      const allRatings = await ratingRepo.find({
+        where: { movie: { id: movieId } },
+      });
 
-    const allRatings = await ratingRepo.find({
-      where: { movie: { id: movieId } },
-    });
+      let avg = 0;
+      if (allRatings.length > 0) {
+        const totalScore = allRatings.reduce(
+          (sum: number, rating: Rating) => sum + rating.score,
+          0,
+        );
+        avg = totalScore / allRatings.length;
+      }
 
-    if (allRatings.length === 0) {
-      await movieRepo.update(movieId, { avg_rating: 0 });
+      await movieRepo.update(
+        { id: movieId },
+        { avg_rating: parseFloat(avg.toFixed(1)) },
+      );
+    } catch (error) {
+      this.logger.error('Failed to recalculate movie average rating', error);
     }
-
-    const totalScore = allRatings.reduce(
-      (sum: number, rating: Rating) => sum + rating.score,
-      0,
-    );
-
-    const newAverage = totalScore / allRatings.length;
-
-    await movieRepo.update(
-      { id: movieId },
-      { avg_rating: parseFloat(newAverage.toFixed(1)) },
-    );
   }
 }
