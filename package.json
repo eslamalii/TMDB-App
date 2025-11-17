@@ -76,6 +76,18 @@
       "json",
       "ts"
     ],
+    "coveragePathIgnorePatterns": [
+      "/src/main.ts",
+      ".module.ts$",
+      ".entity.ts$",
+      ".dto.ts$",
+      ".guard.ts$",
+      ".strategy.ts$",
+      "/src/database/database.module.ts",
+      "/src/seed/",
+      "seed.ts$",
+      ".controller.ts$"
+    ],
     "rootDir": "src",
     "testRegex": ".*\\.spec\\.ts$",
     "transform": {
