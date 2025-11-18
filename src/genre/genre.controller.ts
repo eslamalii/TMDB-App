@@ -1,7 +1,6 @@
 import { Controller, Get, UseInterceptors } from '@nestjs/common';
 import { GenreService } from './genre.service';
 import { Genre } from '../database/entities/genre.entity';
-import { CacheInterceptor } from '@nestjs/cache-manager';
 import { HttpCacheInterceptor } from '../common/interceptors/http-cache.interceptor';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 
