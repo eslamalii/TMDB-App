@@ -1,15 +1,20 @@
-FROM node:25-alpine3.21
+FROM node:25-alpine
 
 WORKDIR /usr/src/app
 
+# Install dependencies
 COPY package*.json ./
+RUN npm ci
 
-RUN npm i 
-
+# Copy source and build
 COPY . .
+RUN npm run build
 
-RUN npm run build 
+# Remove dev dependencies to save space
+RUN npm prune --production
 
+# Expose port
 EXPOSE 3000
 
-CMD [ "node", "dist/main" ]
+# Start app
+CMD ["node", "dist/main.js"]

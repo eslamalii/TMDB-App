@@ -1,40 +1,35 @@
 services:
-  # 1. The NestJS API Service
+  # The NestJS API Service
   api:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     ports:
-      - '8080:3000' # Maps host port 8080 to container port 3000
+      - '8080:3000'
     env_file:
       - .env
-    volumes:
-      - .:/usr/src/app
-      - /usr/src/app/node_modules # Exclude node_modules from volume mount
     depends_on:
       - db
       - cache
-    command: npm run start:dev # Use dev server for hot-reloading
+    restart: unless-stopped
 
-  # 2. The PostgreSQL Database Service
+  # PostgreSQL Database
   db:
     image: postgres:18-alpine
     env_file:
       - .env
     ports:
-      - '5432:5432' # Expose DB port to host (optional, for debugging)
+      - '5432:5432'
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
 
-  # 3. The Redis Cache Service
+  # Redis Cache
   cache:
     image: redis:8.2.3-alpine
-    restart: unless-stopped
     ports:
-      - '6379:6379' # Expose Redis port to host (optional, for debugging)
+      - '6379:6379'
     volumes:
       - redis_data:/data
+    restart: unless-stopped
 
 volumes:
   postgres_data:
