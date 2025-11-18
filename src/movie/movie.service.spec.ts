@@ -6,15 +6,23 @@ import { FilterMovieDto } from '../common/dtos/filter.dto';
 
 const mockMovie = { id: 1, title: 'Fight Club' } as any;
 
-const createMockQueryBuilder = () => ({
-  where: jest.fn().mockReturnThis(),
-  andWhere: jest.fn().mockReturnThis(),
-  leftJoinAndSelect: jest.fn().mockReturnThis(),
-  skip: jest.fn().mockReturnThis(),
-  take: jest.fn().mockReturnThis(),
-  getMany: jest.fn().mockResolvedValue([mockMovie]),
-  getOne: jest.fn(),
-});
+const createMockQueryBuilder = () => {
+  const mockQb: any = {
+    where: jest.fn().mockReturnThis(),
+    andWhere: jest.fn().mockReturnThis(),
+    leftJoin: jest.fn().mockReturnThis(),
+    leftJoinAndSelect: jest.fn().mockReturnThis(),
+    distinct: jest.fn().mockReturnThis(),
+    skip: jest.fn().mockReturnThis(),
+    take: jest.fn().mockReturnThis(),
+    getMany: jest.fn().mockResolvedValue([mockMovie]),
+    getOne: jest.fn(),
+    getCount: jest.fn().mockResolvedValue(1),
+    clone: jest.fn(),
+  };
+  mockQb.clone.mockReturnValue(mockQb);
+  return mockQb;
+};
 
 describe('MovieService', () => {
   let service: MovieService;
@@ -48,7 +56,14 @@ describe('MovieService', () => {
     it('should return movies with default pagination', async () => {
       const result = await service.findAll({} as FilterMovieDto);
 
-      expect(result).toEqual([mockMovie]);
+      expect(result.items).toEqual([mockMovie]);
+      expect(result.meta).toEqual({
+        total: 1,
+        limit: 20,
+        offset: 0,
+        page: 1,
+        pages: 1,
+      });
       expect(mockQueryBuilder.skip).toHaveBeenCalledWith(0);
       expect(mockQueryBuilder.take).toHaveBeenCalledWith(20);
       expect(mockQueryBuilder.getMany).toHaveBeenCalled();
@@ -73,7 +88,7 @@ describe('MovieService', () => {
     it('should apply genre filter', async () => {
       await service.findAll({ genre: 'Action' } as FilterMovieDto);
 
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalledWith(
+      expect(mockQueryBuilder.leftJoin).toHaveBeenCalledWith(
         'movie.genres',
         'genre',
       );
@@ -81,6 +96,7 @@ describe('MovieService', () => {
         'genre.name = :genre',
         { genre: 'Action' },
       );
+      expect(mockQueryBuilder.distinct).toHaveBeenCalledWith(true);
     });
 
     it('should apply both search and genre filters', async () => {
@@ -90,8 +106,9 @@ describe('MovieService', () => {
       } as FilterMovieDto);
 
       expect(mockQueryBuilder.where).toHaveBeenCalled();
-      expect(mockQueryBuilder.leftJoinAndSelect).toHaveBeenCalled();
+      expect(mockQueryBuilder.leftJoin).toHaveBeenCalled();
       expect(mockQueryBuilder.andWhere).toHaveBeenCalled();
+      expect(mockQueryBuilder.distinct).toHaveBeenCalledWith(true);
     });
 
     it('should handle empty filters', async () => {
@@ -99,7 +116,7 @@ describe('MovieService', () => {
 
       expect(mockQueryBuilder.where).not.toHaveBeenCalled();
       expect(mockQueryBuilder.andWhere).not.toHaveBeenCalled();
-      expect(mockQueryBuilder.leftJoinAndSelect).not.toHaveBeenCalled();
+      expect(mockQueryBuilder.leftJoin).not.toHaveBeenCalled();
     });
   });
 

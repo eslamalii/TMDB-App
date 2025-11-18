@@ -134,7 +134,11 @@ describe('AuthService', () => {
         email: '  NEW@EXAMPLE.COM ',
       });
 
-      expect(result).toEqual(mockUser);
+      expect(result).toEqual({
+        id: mockUser.id,
+        email: mockUser.email,
+        username: mockUser.username,
+      });
       expect(userService.findByEmail).toHaveBeenCalledWith('new@example.com');
       expect(userService.create).toHaveBeenCalledWith({
         ...registerDto,
