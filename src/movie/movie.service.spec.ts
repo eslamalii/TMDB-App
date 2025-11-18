@@ -2,7 +2,7 @@ import { MovieService } from './movie.service';
 import { Movie } from '../database/entities/movie.entity';
 import { Test, TestingModule } from '@nestjs/testing';
 import { getRepositoryToken } from '@nestjs/typeorm';
-import { FilterMovieDto } from 'src/common/dtos/filter.dto';
+import { FilterMovieDto } from '../common/dtos/filter.dto';
 
 const mockMovie = { id: 1, title: 'Fight Club' } as any;
 

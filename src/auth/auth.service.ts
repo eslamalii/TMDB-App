@@ -28,7 +28,9 @@ export class AuthService {
     return result;
   }
 
-  async register(createUserDto: CreateUserDto) {
+  async register(
+    createUserDto: CreateUserDto,
+  ): Promise<Omit<User, 'password'>> {
     const normalizedEmail = createUserDto.email.trim().toLowerCase();
 
     const existing = await this.userService.findByEmail(normalizedEmail);
@@ -37,13 +39,17 @@ export class AuthService {
       throw new ConflictException('Email already registered');
     }
 
-    return this.userService.create({
+    const user = await this.userService.create({
       ...createUserDto,
       email: normalizedEmail,
     });
+
+    const { password, ...result } = user;
+
+    return result;
   }
 
-  async login(user: User) {
+  async login(user: Partial<User>) {
     const payload = { email: user.email, sub: user.id };
 
     const access_token = this.jwtService.sign(payload);

@@ -2,7 +2,8 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Movie } from '../database/entities/movie.entity';
 import { Repository } from 'typeorm';
-import { FilterMovieDto } from 'src/common/dtos/filter.dto';
+import { FilterMovieDto } from '../common/dtos/filter.dto';
+import { PaginationMetaDto } from 'src/common/dtos/pagination-meta.dto';
 
 @Injectable()
 export class MovieService {
@@ -21,23 +22,35 @@ export class MovieService {
     return movie;
   }
 
-  async findAll(movieDto: FilterMovieDto): Promise<Movie[]> {
+  async findAll(
+    movieDto: FilterMovieDto,
+  ): Promise<{ items: Movie[]; meta: PaginationMetaDto }> {
     const { offset = 0, limit = 20, search, genre } = movieDto;
 
-    const query = this.movieRepository.createQueryBuilder('movie');
+    const baseQb = this.movieRepository.createQueryBuilder('movie');
 
     if (search) {
-      query.where('movie.title ILIKE :search', { search: `%${search}%` });
+      baseQb.where('movie.title ILIKE :search', { search: `%${search}%` });
     }
 
     if (genre) {
-      query
-        .leftJoinAndSelect('movie.genres', 'genre')
+      baseQb
+        .leftJoin('movie.genres', 'genre')
         .andWhere('genre.name = :genre', { genre });
+      baseQb.distinct(true);
     }
 
-    query.skip(offset).take(limit);
+    const total = await baseQb.getCount();
 
-    return await query.getMany();
+    const items = await baseQb.clone().skip(offset).take(limit).getMany();
+
+    const safeLimit = Math.max(1, Number(limit));
+    const page = Math.floor(Number(offset) / safeLimit) + 1;
+    const pages = Math.max(1, Math.ceil(total / safeLimit));
+
+    return {
+      items,
+      meta: { total, limit: safeLimit, offset: Number(offset), page, pages },
+    };
   }
 }

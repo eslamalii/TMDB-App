@@ -1,11 +1,44 @@
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { ValidationPipe } from '@nestjs/common';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   //Set a global prefix for all routes (e.g., /api)
   app.setGlobalPrefix('api');
+
+  // Global validation
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Swagger setup
+  const config = new DocumentBuilder()
+    .setTitle('TMDB Movie API')
+    .setDescription(
+      'A comprehensive movie database API with user authentication, ratings, and watchlist management.\n\n' +
+        '**Getting Started:**\n' +
+        '1. Register a new account at `/api/auth/register`\n' +
+        '2. Login at `/api/auth/login` to get your JWT token\n' +
+        '3. Click "Authorize" 🔓 and paste your JWT token (no "Bearer " prefix)\n' +
+        '4. Now you can rate movies and manage your watchlist!\n\n' +
+        '**Public Endpoints:** Movies, Genres (no auth required)\n' +
+        '**Protected Endpoints:** Ratings, Watchlist (JWT required)',
+    )
+    .setVersion('1.0')
+    .addBearerAuth(
+      { type: 'http', scheme: 'bearer', bearerFormat: 'JWT' },
+      'Bearer',
+    )
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document);
 
   const port = process.env.PORT || 3000;
 
