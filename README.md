@@ -1,98 +1,226 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# TMDB Movie API
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+A RESTful movie database API built with NestJS, featuring user authentication, movie ratings, and watchlist management. Data is seeded from [The Movie Database (TMDB)](https://www.themoviedb.org/) API.
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+---
 
-## Description
+## Table of Contents
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
+- [Features](#features)
+- [Prerequisites](#prerequisites)
+- [Quick Start](#quick-start)
+- [API Documentation](#api-documentation)
+- [Development](#development)
+- [Architecture & Design](#architecture--design-decisions)
+- [Troubleshooting](#troubleshooting)
 
-## Project setup
+---
 
-```bash
-$ npm install
-```
+## Features
 
-## Compile and run the project
+- Browse movies with pagination, search, and genre filtering
+- JWT authentication (register/login)
+- Rate movies (1-10 scale)
+- Personal watchlist management
+- Redis caching for optimized performance
+- Interactive API documentation (Swagger)
+- Fully containerized with Docker
 
-```bash
-# development
-$ npm run start
+---
 
-# watch mode
-$ npm run start:dev
+## Prerequisites
 
-# production mode
-$ npm run start:prod
-```
+- Docker & Docker Compose
+- TMDB API Key ([Get one free here](https://www.themoviedb.org/settings/api))
 
-## Run tests
+---
+
+## Quick Start
+
+### 1. Clone and setup environment
 
 ```bash
-# unit tests
-$ npm run test
+# Copy environment template
+cp .env.example .env
 
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+# Edit .env and add your TMDB_API_KEY
 ```
 
-## Deployment
+**Required `.env` variables:**
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
+```env
+PORT=3000
+POSTGRES_USER=myuser
+POSTGRES_PASSWORD=mypassword
+POSTGRES_DB=tmdb_app
+DATABASE_HOST=db
+DATABASE_PORT=5432
+REDIS_HOST=cache
+REDIS_PORT=6379
+CACHE_TTL=300
+TMDB_API_KEY=YOUR_TMDB_API_KEY_GOES_HERE
+JWT_SECRET=YOUR_SUPER_SECRET_JWT_KEY
+JWT_EXPIRES_IN=3600s
+```
 
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
+### 2. Start the application
 
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+# Build and start all services (API, PostgreSQL, Redis)
+docker-compose up --build -d
+
+# Check if containers are running
+docker ps
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+### 3. Seed the database
 
-## Resources
+```bash
+# Run the seed script to populate movies and genres from TMDB
+npm run seed
 
-Check out a few resources that may come in handy when working with NestJS:
+# Or through docker
+docker-compose run --rm api npm run seed
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+### 4. Access the API
 
-## Support
+- **API Base URL:** **http://localhost:8080/api**
 
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
+---
 
-## Stay in touch
+## API Documentation
 
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
+Visit **http://localhost:8080/docs** for the full interactive API documentation.
+
+### Key Endpoints
+
+#### Public Endpoints
+
+- `GET /api/movies` - List movies (with pagination, search, genre filter)
+- `GET /api/movies/:id` - Get movie details
+- `GET /api/genres` - List all genres
+
+#### Protected Endpoints (require JWT)
+
+- `POST /api/movies/:id/rate` - Rate a movie
+- `GET /api/users/me/watchlist` - Get your watchlist
+- `POST /api/users/me/watchlist` - Add movie to watchlist
+- `DELETE /api/users/me/watchlist/:movieId` - Remove from watchlist
+
+---
+
+## Development
+
+### Run locally (without Docker)
+
+```bash
+# Install dependencies
+npm install
+
+# Start PostgreSQL and Redis manually or via Docker
+docker-compose up db cache -d
+
+# Run in development mode
+npm run start:dev
+```
+
+### Run tests
+
+```bash
+# Unit tests
+npm run test
+
+# Test coverage
+npm run test:cov
+```
+
+**Coverage Report:**
+
+[![Test Coverage](https://i.ibb.co/BHKTLVrD/Screenshot-2025-11-18-at-4-06-58-AM.png)](https://ibb.co/p6r42vRD)
+
+#### Understanding Test Coverage
+
+**Why some lines remain uncovered:**
+
+The uncovered lines (shown in the report above) are primarily:
+
+- **Constructor decorators** (`@InjectRepository`, `@Inject`) - Framework boilerplate that can't be executed in unit tests
+
+---
+
+## Architecture & Design Decisions
+
+### Database Schema
+
+[![Database ERD](https://i.ibb.co/CpS4Sj8k/Untitled-diagram-2025-11-15-174457.png)](https://ibb.co/xKrwrnLp)
+
+#### Entity Relationships
+
+- **User** ↔ **Rating** (One-to-Many): Users can rate multiple movies
+- **User** ↔ **Watchlist** (One-to-Many): Users can have multiple movies in their watchlist
+- **Movie** ↔ **Rating** (One-to-Many): Movies can have multiple ratings from different users
+- **Movie** ↔ **Watchlist** (One-to-Many): Movies can be in multiple users' watchlists
+- **Movie** ↔ **Genre** (Many-to-Many): Movies can have multiple genres, genres can belong to multiple movies
+
+#### Key Tables
+
+- `user` - User accounts with authentication
+- `movie` - Movie details from TMDB (with calculated avg_rating)
+- `genre` - Movie genres
+- `rating` - User ratings for movies (1-10 scale)
+- `watchlist` - User's personal movie watchlist
+- `movie_genre` - Join table for movie-genre relationship
+
+### Tech Stack
+
+- **Framework:** NestJS (TypeScript)
+- **Database:** PostgreSQL with TypeORM
+- **Cache:** Redis (with custom cache key strategy for query params)
+- **Authentication:** JWT with Passport strategies
+- **Documentation:** Swagger/OpenAPI
+
+### Key Design Choices
+
+**1. Data Source**
+
+- Movies are seeded from TMDB API into our database, not proxied live
+
+**2. Caching Strategy**
+
+- Custom `HttpCacheInterceptor` generates unique cache keys including query parameters
+- TTL: 300 seconds (configurable via `CACHE_TTL`)
+
+**3. Rating System**
+
+- Recalculates movie's `avg_rating` on every new rating
+- Uses database transactions for consistency
+- Scores range from 1-10
+
+**4. Security**
+
+- Passwords hashed with bcrypt
+- JWT tokens for stateless authentication
+- Protected routes use `JwtAuthGuard`
+
+### Project Structure
+
+```
+src/
+├── auth/            # Authentication & JWT strategies
+├── cache/           # Redis cache configuration
+├── common/          # Shared DTOs, guards, interceptors
+├── database/        # TypeORM entities & config
+├── genre/           # Genre endpoints
+├── movie/           # Movie endpoints & business logic
+├── rating/          # Rating system
+├── seed/            # TMDB data seeding service
+├── user/            # User management
+└── watchlist/       # Watchlist feature
+```
+
+---
 
 ## License
 
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+This project is [MIT licensed](LICENSE).
