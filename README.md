@@ -63,6 +63,24 @@ JWT_SECRET=YOUR_SUPER_SECRET_JWT_KEY
 JWT_EXPIRES_IN=3600s
 ```
 
+**Optional security/env settings:**
+
+```env
+# Swagger: enabled by default in non-production; set to true to force-enable in prod
+ENABLE_SWAGGER=false
+
+# CORS: comma-separated origins (leave empty to allow all in dev)
+ALLOWED_ORIGINS=http://localhost:3000
+
+# TypeORM: schema sync & SQL logging (disable in production)
+DB_SYNC=true
+DB_LOGGING=false
+
+# Rate limiting: requests per TTL window
+RATE_TTL_SECONDS=60
+RATE_LIMIT=100
+```
+
 ### 2. Start the application
 
 ```bash
@@ -202,6 +220,8 @@ The uncovered lines (shown in the report above) are primarily:
 - Passwords hashed with bcrypt
 - JWT tokens for stateless authentication
 - Protected routes use `JwtAuthGuard`
+- HTTP security headers via `helmet`
+- Global rate limiting via `@nestjs/throttler` (configurable with `RATE_TTL_SECONDS`/`RATE_LIMIT`)
 
 ### Project Structure
 

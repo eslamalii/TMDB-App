@@ -11,6 +11,8 @@ import { AuthModule } from './auth/auth.module';
 import { RatingModule } from './rating/rating.module';
 import { WatchlistModule } from './watchlist/watchlist.module';
 import { AppCacheModule } from './cache/cache.module';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 
 @Module({
   imports: [
@@ -18,6 +20,12 @@ import { AppCacheModule } from './cache/cache.module';
       isGlobal: true,
       envFilePath: `.env`,
     }),
+    ThrottlerModule.forRoot([
+      {
+        ttl: parseInt(process.env.RATE_TTL_SECONDS || '60', 10),
+        limit: parseInt(process.env.RATE_LIMIT || '100', 10),
+      },
+    ]),
     DatabaseModule,
     SeedModule,
     GenreModule,
@@ -29,6 +37,12 @@ import { AppCacheModule } from './cache/cache.module';
     AppCacheModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [
+    AppService,
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+  ],
 })
 export class AppModule {}

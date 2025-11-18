@@ -2,12 +2,16 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
+import helmet from 'helmet';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
 
   //Set a global prefix for all routes (e.g., /api)
   app.setGlobalPrefix('api');
+
+  // Security headers via Helmet
+  app.use(helmet());
 
   // CORS (restrict origins via env ALLOWED_ORIGINS="http://localhost:3000,http://localhost:8080")
   const allowedOrigins = (process.env.ALLOWED_ORIGINS || '')
