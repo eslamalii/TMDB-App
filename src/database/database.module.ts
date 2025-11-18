@@ -7,19 +7,28 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TypeOrmModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        type: 'postgres',
-        host: configService.get<string>('DATABASE_HOST'),
-        port: configService.get<number>('DATABASE_PORT'),
-        username: configService.get<string>('POSTGRES_USER'),
-        password: configService.get<string>('POSTGRES_PASSWORD'),
-        database: configService.get<string>('POSTGRES_DB'),
+      useFactory: (configService: ConfigService) => {
+        const dbSync = configService.get<string>('DB_SYNC');
+        const nodeEnv = configService.get<string>('NODE_ENV');
+        return {
+          type: 'postgres',
+          host: configService.get<string>('DATABASE_HOST'),
+          port: configService.get<number>('DATABASE_PORT'),
+          username: configService.get<string>('POSTGRES_USER'),
+          password: configService.get<string>('POSTGRES_PASSWORD'),
+          database: configService.get<string>('POSTGRES_DB'),
 
-        entities: [__dirname + '/entities/*.entity{.ts,.js}'],
+          entities: [__dirname + '/entities/*.entity{.ts,.js}'],
 
-        //Should be false in production
-        synchronize: true,
-      }),
+          // Default to false; allow override via DB_SYNC=true for dev only
+          synchronize:
+            typeof dbSync === 'string'
+              ? dbSync.toLowerCase() === 'true'
+              : nodeEnv !== 'production',
+          // Avoid verbose SQL logs in production unless explicitly enabled
+          logging: configService.get<string>('DB_LOGGING', 'false') === 'true',
+        };
+      },
     }),
   ],
 })
