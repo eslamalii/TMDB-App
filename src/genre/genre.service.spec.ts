@@ -12,6 +12,10 @@ const mockGenreRepository = {
 };
 
 describe('GenreService', () => {
+  // Note: Constructor and DI decorators are not covered in unit tests
+  // as they are framework-level concerns tested by NestJS itself.
+  // Our tests focus on business logic after DI is resolved.
+
   let service: GenreService;
   let repository: typeof mockGenreRepository;
 
